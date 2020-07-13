@@ -7,9 +7,9 @@ import { PlusOutlined, FormOutlined, DeleteOutlined } from '@ant-design/icons'
 
 import './index.less'
 
-import { reqGetSubjectList } from '@api/edu/subject'
+// import { reqGetSubjectList } from '@api/edu/subject'
 
-import { getSubjectList } from './redux'
+import { getSubjectList, getSecSubjectList } from './redux'
 
 import { connect } from 'react-redux'
 const columns = [
@@ -62,7 +62,7 @@ const data = [
 
 @connect(state => ({ subjectList: state.subjectList }),
   {
-    getSubjectList
+    getSubjectList, getSecSubjectList
   }
 )
 class Subject extends Component {
@@ -71,7 +71,8 @@ class Subject extends Component {
   //   subject: ''
   // }
   current = 2
-  async componentDidMount () {
+  // async 
+  componentDidMount () {
     // const res = await reqGetSubjectList(1, 10)
     // console.log(res)
     // this.setState({
@@ -82,14 +83,14 @@ class Subject extends Component {
     this.props.getSubjectList(1, 10)
   }
 
-  getSubjectList = async (page, size) => {
-    const res = await reqGetSubjectList(page, size)
-    console.log(res)
-    this.setState({
-      subject: res
-    })
+  // getSubjectList = async (page, size) => {
+  //   const res = await reqGetSubjectList(page, size)
+  //   console.log(res)
+  //   this.setState({
+  //     subject: res
+  //   })
 
-  }
+  // }
 
   handleChange = (page, pageSize) => {
     // this.getSubjectList(page, pageSize)
@@ -104,14 +105,32 @@ class Subject extends Component {
     this.props.getSubjectList(current, size)
     this.currentPage = current
   }
+
+  handleClickExpand = (expanded, record) => {
+    if (expanded) {
+      // 请求二级菜单数据
+      // 需要传入parentId
+      this.props.getSecSubjectList(record._id)
+    }
+  }
+
+  // 跳转到添加页面
+  handleGoAddSubject = () => {
+    this.props.history.push('/edu/subject/add')
+  }
+
+
   render () {
     return <div className='subject'>
-      <Button type="primary" className='subject-btn'><PlusOutlined />添加</Button>
+      <Button type="primary" className='subject-btn' onClick={this.handleGoAddSubject}>
+        <PlusOutlined />新建</Button>
       <Table
         columns={columns}
         expandable={{
-          expandedRowRender: record => <p style={{ margin: 0 }}>{record.description}</p>,
-          rowExpandable: record => record.name !== 'Not Expandable',
+          // expandedRowRender: record => (<p style={{ margin: 0 }}>{record.description}</p>),
+          // rowExpandable: record => record.name !== 'Not Expandable',
+          onExpand: this.handleClickExpand
+
         }}
         dataSource={this.props.subjectList.items}
         rowKey='_id'
