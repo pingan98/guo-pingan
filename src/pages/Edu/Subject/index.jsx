@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 
-import { Button, Table } from 'antd';
+import { Button, Table, Input, Tooltip } from 'antd';
 
 import { PlusOutlined, FormOutlined, DeleteOutlined } from '@ant-design/icons'
 
@@ -11,23 +11,8 @@ import './index.less'
 
 import { getSubjectList, getSecSubjectList } from './redux'
 
+// 导入connect
 import { connect } from 'react-redux'
-const columns = [
-  { title: '分类名称', dataIndex: 'title', key: 'title' },
-
-  {
-    title: '操作',
-    dataIndex: '',
-    key: 'x',
-    render: () => (
-      <>
-        <Button type="primary" className='update-btn'><FormOutlined /></Button>,
-        <Button type="danger"><DeleteOutlined /></Button>
-      </>
-    ),
-    width: 199
-  },
-];
 
 const data = [
   {
@@ -70,6 +55,17 @@ class Subject extends Component {
   // state = {
   //   subject: ''
   // }
+
+  state = {
+    // subjectId的作用：
+    // 1.如果subjectId没有表示表格每一行直接展示课程分类的title，
+    //                            如果有值（应该就是要修改数据的id）
+    // 2.修改数据需要subjectId
+
+    subjectId: '',
+    subjectTitle: ''  // 用于设置受控组价
+  }
+
   current = 2
   // async 
   componentDidMount () {
@@ -107,6 +103,8 @@ class Subject extends Component {
   }
 
   handleClickExpand = (expanded, record) => {
+    // console.log(expanded, record)
+    // 判断如果是展开就请求二级菜单数据，关闭就什么都不做
     if (expanded) {
       // 请求二级菜单数据
       // 需要传入parentId
@@ -119,8 +117,84 @@ class Subject extends Component {
     this.props.history.push('/edu/subject/add')
   }
 
-
+  // 点击更新按钮的事件处理函数
+  handleUpdateClick = value => () => {
+    this.setState({
+      subjectId: value._id,
+      subjectTitle: value.title
+    })
+  }
+  // 修改数据时，受控组件input的change回调函数
+  handleTitleChange = (e) => {
+    this.setState({
+      subjectTitle: e.target.value
+    })
+  }
   render () {
+    // 注意：这个columns必须写到render中，因为state变化，render会调用，这个columns才会重新执行
+    const columns = [
+      // columns  定义表格的列
+      // title属性：表示列的名称
+      // dataIndex决定：这一列展示的data中哪一项的数据
+      {
+        title: '分类名称',
+        // dataIndex: 'title',
+        key: 'title',
+        render: (value) => {
+          // 如果state里面存储的id和这一条数据的id相同，就展示input
+          // 、由于第一页数据有10条，所以这个render的回调会执行10次
+          // 接收value是每一行数据
+          console.log(value)
+          if (this.state.subjectId === value._id) {
+            return (
+              <Input
+                value={this.state.subjectTitle}
+                className='subject-input'
+                onChange={this.handleTitleChange}
+              />
+            )
+          }
+          return <span>{value.title}</span>
+        }
+      },
+
+      {
+        title: '操作',
+        dataIndex: '',// 标识这一列不渲染data里的数据
+        key: 'x',
+        // 自定义这一列要渲染的内容
+        render: (value) => {
+          // 判断当前数据的id是否和state里面的subjectId的值是相同的
+          // 如果相同，展示确认呢和取消按钮，否则展示修改和删除按钮
+          if (this.state.subjectId === value._id) {
+            return (
+              <>
+                <Button type='primary' className='update-btn'>确认</Button>
+                <Button type='danger'>取消</Button>
+
+              </>
+            )
+          }
+          return (
+            <>
+              <Tooltip title='更新课程分类'>
+                <Button type="primary" className='update-btn'
+                  onClick={this.handleUpdateClick(value)}>
+                  <FormOutlined />
+                </Button>
+              </Tooltip>
+              <Tooltip title='删除课程分类'>
+                <Button type="danger"><DeleteOutlined /></Button>
+              </Tooltip>
+            </>
+          )
+
+        },
+
+        width: 199
+      }
+    ];
+
     return <div className='subject'>
       <Button type="primary" className='subject-btn' onClick={this.handleGoAddSubject}>
         <PlusOutlined />新建</Button>
@@ -148,7 +222,7 @@ class Subject extends Component {
 
         }}
       />,
-      </div>
+      </div >
 
   }
 }

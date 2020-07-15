@@ -2,7 +2,7 @@ import request from '@utils/request'
 
 const BASE_URL = '/admin/edu/subject'
 
-// 获取一级分类
+// 获取一级课程分类
 export function reqGetSubjectList (page, limit) {
     return request({
         url: `${BASE_URL}/${page}/${limit}`,
@@ -14,5 +14,16 @@ export function reqGetSecSubjectList (parentId) {
     return request({
         url: `${BASE_URL}/get/${parentId}`,
         method: 'GET'
+    })
+}
+// 添加课程分类
+export function reqAddSubjectList (title, parentId) {
+    return request({
+        url: `${BASE_URL}/save/`,
+        method: 'POST',
+        data: {
+            title,
+            parentId
+        }
     })
 }
