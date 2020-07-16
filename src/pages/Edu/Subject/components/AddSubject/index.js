@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 
-import { Form, Input, Button, Select, Card } from 'antd';
+import { Form, Input, Button, Select, Card, message } from 'antd';
 
 import { ArrowLeftOutlined } from '@ant-design/icons'
 
@@ -10,7 +10,7 @@ import { connect } from 'react-redux'
 
 // import { getSubjectList } from '../../redux'
 
-import { reqGetSubjectList } from '@api/edu/subject'
+import { reqGetSubjectList, reqAddSubjectList } from '@api/edu/subject'
 import './index.css'
 const Option = Select.Option
 const layout = {
@@ -64,8 +64,20 @@ class AddSubject extends Component {
         })
 
     }
-    onFinish = values => {
-        console.log('Success:', values);
+    // 点击添加按钮，表单校验成功之后的回调函数
+    onFinish = async values => {
+
+        // console.log('Success:', values);
+        try {
+            // 发送请求新增课程分类
+            await reqAddSubjectList(values.subjectname, values.parentid)
+            // 提示一下
+            message.success('课程分类添加成功')
+            // 跳回到subjectlist页面
+            this.props.history.push('/edu/subject/list')
+        } catch  {
+            message.error('课程分类添加失败')
+        }
     };
 
 

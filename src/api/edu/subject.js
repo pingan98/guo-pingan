@@ -19,11 +19,30 @@ export function reqGetSecSubjectList (parentId) {
 // 添加课程分类
 export function reqAddSubjectList (title, parentId) {
     return request({
-        url: `${BASE_URL}/save/`,
+        url: `${BASE_URL}/save`,
         method: 'POST',
         data: {
             title,
             parentId
         }
+    })
+}
+
+//定义 更新课程分类title的方法
+export function reqUpdateSubjectList (title, id) {
+    return request({
+        url: `${BASE_URL}/update`,
+        method: 'PUT',
+        data: {
+            title,
+            id
+        }
+    })
+}
+//定义删除课程分类title的方法
+export function reqDelSubject (id) {
+    return request({
+        url: `${BASE_URL}/remove/${id}`,
+        method: 'DELETE'
     })
 }

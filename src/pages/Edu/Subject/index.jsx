@@ -1,19 +1,26 @@
 import React, { Component } from "react";
 
-import { Button, Table, Input, Tooltip } from 'antd';
+import { Button, Table, Input, Tooltip, message, Modal } from 'antd';
 
-import { PlusOutlined, FormOutlined, DeleteOutlined } from '@ant-design/icons'
+import {
+  PlusOutlined, FormOutlined,
+  DeleteOutlined, ExclamationCircleOutlined
+} from '@ant-design/icons'
 
 
 import './index.less'
 
 // import { reqGetSubjectList } from '@api/edu/subject'
 
-import { getSubjectList, getSecSubjectList } from './redux'
+import {
+  getSubjectList, getSecSubjectList,
+  updateSubject
+} from './redux'
 
 // 导入connect
 import { connect } from 'react-redux'
-
+import { reqDelSubject } from '@api/edu/subject'
+const { confirm } = Modal
 const data = [
   {
     key: 1,
@@ -47,7 +54,7 @@ const data = [
 
 @connect(state => ({ subjectList: state.subjectList }),
   {
-    getSubjectList, getSecSubjectList
+    getSubjectList, getSecSubjectList, updateSubject
   }
 )
 class Subject extends Component {
@@ -66,7 +73,8 @@ class Subject extends Component {
     subjectTitle: ''  // 用于设置受控组价
   }
 
-  current = 2
+  currentPage = 1
+  pageSize = 10
   // async 
   componentDidMount () {
     // const res = await reqGetSubjectList(1, 10)
@@ -88,20 +96,24 @@ class Subject extends Component {
 
   // }
 
+  // 点击页码,获取对应页的数据
   handleChange = (page, pageSize) => {
     // this.getSubjectList(page, pageSize)
-
+    // 发送请求
     this.props.getSubjectList(page, pageSize)
+    // 动态给currentPage赋值，保证当前高亮的页码和实际获取的页面保持一致
     this.currentPage = page
   }
-
+  // 一页展示几条数据变化时触发的回调函数
   handleSizeChange = (current, size) => {
     // this.getSubjectList(current, size)
 
     this.props.getSubjectList(current, size)
     this.currentPage = current
   }
-
+  // 点击可展开按钮触发
+  // expanded: true表示展开了, false表示关闭了
+  // record: 就是对应的这一行的数据
   handleClickExpand = (expanded, record) => {
     // console.log(expanded, record)
     // 判断如果是展开就请求二级菜单数据，关闭就什么都不做
@@ -123,13 +135,100 @@ class Subject extends Component {
       subjectId: value._id,
       subjectTitle: value.title
     })
+    // 存储一下老的subjectTitle
+    this.oldSubjectTitle = value.title
   }
   // 修改数据时，受控组件input的change回调函数
   handleTitleChange = (e) => {
     this.setState({
-      subjectTitle: e.target.value
+      subjectTitle: e.target.value.trim()
     })
   }
+  // 取消按钮
+  handleCancel = () => {
+    this.setState({
+      subjectId: '',
+      subjectTitle: ''
+    })
+  }
+  // 更新确认按钮的时间回调函数
+  handleUpdate = async () => {
+    let { subjectId, subjectTitle } = this.state
+
+    // 优化
+    // 1.如果用户输入的是空字符串，就不执行后面操作
+    if (subjectTitle.length === 0) {
+      message.error('课程分类名称不能为空')
+      return
+    }
+    // 2.如果用户输入的内容和原来的内容相同，则不执行后面的操作
+    // 思路：点击更新按钮的时候，把旧的课程分类名称存起来
+    // 点击确认的时候，用新数据（subjectTitle）和老数据进行比较
+    if (this.oldSubjectTitle === subjectTitle) {
+      message.error('课程分类名称不能和之前的相同')
+      return
+    }
+
+    // 在异步操作之前加一个await  就可以让异步执行完毕之后，再执行后面的代码
+    await this.props.updateSubject(subjectTitle, subjectId)
+
+    message.success('更改成功')
+
+    // 手动调用取消按钮的事件处理函数，让表格行展示内容
+    this.handleCancel()
+
+  }
+
+  // 删除课程分类
+  handleDel = value => () => {
+    confirm({
+      title: (
+        <>
+          <div>
+            确定要删除
+              <span style={{ color: 'red', fontSize: 29 }}>{value.title}</span>
+            吗？
+          </div>
+        </>
+      ),
+      icon: <ExclamationCircleOutlined />,
+      onOk: async () => {
+        // 真正去删除这条数据
+        await reqDelSubject(value._id)
+        message.success('删除成功')
+
+        // 重新请求获取最新的数据
+        // 如果当前页是最后一页，并且最后一页只有一条数据
+        // 并且当前不是第一页，那么请求数据的时候，应该请求的是上一页数据
+
+        // 1.如何判断当前是否是第一页  this.currentPage!==1
+        // 2.如何判断当前页只剩一条数据
+        // 说明：由于没有修改redux，所以redux中如果items.length为1，证明只有一条数据
+        // 3.如果判断是最后一页
+        // subjectList.total  表示所有的数据
+        // currentPage  表示当前页
+        // pageSize  表示一页多少条
+
+        const totalPage = Math.ceil(this.props.subjectList.total / this.pageSize)
+
+        // 如果totalPage===currentPage  表示最后一页
+        // console.log('currentPage', this.currentPage)
+        // console.log('当前数据长度', this.props.subjectList.items.length)
+        // console.log('totalpage', totalPage)
+        if (this.currentPage !== 1 && this.props.subjectList.items.length === 1
+          && totalPage === this.currentPage
+        ) {
+          // console.log('请求上一页数据')
+          this.props.getSubjectList(--this.currentPage, this.pageSize)
+          return
+        }
+        this.props.getSubjectList(this.currentPage, this.pageSize)
+
+
+      }
+    })
+  }
+
   render () {
     // 注意：这个columns必须写到render中，因为state变化，render会调用，这个columns才会重新执行
     const columns = [
@@ -169,8 +268,10 @@ class Subject extends Component {
           if (this.state.subjectId === value._id) {
             return (
               <>
-                <Button type='primary' className='update-btn'>确认</Button>
-                <Button type='danger'>取消</Button>
+                <Button type='primary' className='update-btn'
+                  onClick={this.handleUpdate}
+                >确认</Button>
+                <Button type='danger' onClick={this.handleCancel}>取消</Button>
 
               </>
             )
@@ -184,7 +285,7 @@ class Subject extends Component {
                 </Button>
               </Tooltip>
               <Tooltip title='删除课程分类'>
-                <Button type="danger"><DeleteOutlined /></Button>
+                <Button type="danger" onClick={this.handleDel(value)}><DeleteOutlined /></Button>
               </Tooltip>
             </>
           )
@@ -196,8 +297,13 @@ class Subject extends Component {
     ];
 
     return <div className='subject'>
-      <Button type="primary" className='subject-btn' onClick={this.handleGoAddSubject}>
-        <PlusOutlined />新建</Button>
+      <Button type="primary"
+        className='subject-btn'
+        onClick={this.handleGoAddSubject}
+      >
+        <PlusOutlined />
+        新建
+        </Button>
       <Table
         columns={columns}
         expandable={{

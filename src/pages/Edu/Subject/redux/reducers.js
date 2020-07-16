@@ -1,4 +1,4 @@
-import { GET_SUBJECT_LIST, GET_SECSUBJECT_LIST } from "./constants";
+import { GET_SUBJECT_LIST, GET_SECSUBJECT_LIST, UPDATE_SUBJECT } from "./constants";
 
 const initSubjectList = {
   total: 0, // 总数
@@ -58,6 +58,30 @@ export default function subjectList (prevState = initSubjectList, action) {
       return {
         ...prevState
       }
+
+    case UPDATE_SUBJECT:
+      // 通过prevState,利用传过来的id，找到要修改的那条数据，然后修改title
+      // 1.遍历prevState  是个对象 items中存储了所有的数据
+      // 注意/；修改的课程分类有可能是一级的，也有可能是二级的
+      prevState.items.forEach(subject => {
+        // 传过来的id是不是一级课程分类
+        if (subject._id === action.data.id) {
+          // 修改title，然后return
+          subject.title = action.data.title
+          return
+        }
+        subject.children.forEach(secSubject => {
+          if (secSubject._id === action.data.id) {
+            secSubject.title = action.data.title
+          }
+        })
+
+      })
+      return {
+        ...prevState
+      }
+
+
     default:
       return prevState;
   }
