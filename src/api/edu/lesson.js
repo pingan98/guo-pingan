@@ -10,3 +10,12 @@ export function reqGetLessonList (chapterId) {
 
     })
 }
+
+// 新增课时，上传视频，获取七牛云token方法
+export function reqGetQiniuToken () {
+    return request({
+        url: `/uploadtoken`,
+        methos: 'GET',
+
+    })
+}
