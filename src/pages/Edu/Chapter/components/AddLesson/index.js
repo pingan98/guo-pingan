@@ -10,6 +10,8 @@ import MyUpload from '../MyUpload'
 
 import './index.css'
 
+import { reqAddLesson } from '@api/edu/lesson';
+
 const Option = Select.Option
 
 const layout = {
@@ -29,8 +31,22 @@ class AddLeeson extends Component {
 
 
     // 点击添加按钮，表单校验成功之后的回调函数
-    onFinish = values => {
+    onFinish = async values => {
         console.log(values)
+        // 要发送请求，添加课时
+        // 问题：如何获取chapterId
+        console.log(this.props)
+        const chapterId = this.props.location.state._id
+
+        const data = {
+            ...values,
+            chapterId
+        }
+
+        await reqAddLesson(data)
+        message.success('添加成功')
+        // 跳回
+        this.props.history.push('/edu/chapter/list')
 
     };
 

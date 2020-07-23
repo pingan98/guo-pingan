@@ -181,7 +181,7 @@ export default class MyUpload extends Component {
                 // 手动调用Form.Item传过来onChange方法,onChange方法中传入需要表单控制的数据
                 // 未来要给本地服务器存储的实际上就是 上传视频成功的地址
                 // 地址: 自己七牛云空间的域名 + 文件名
-                this.props.onChange(this.props.onChange('http://qdcdb1qpp.bkt.clouddn.com/' + res.key))
+                this.props.onChange('http://qdcdb1qpp.bkt.clouddn.com/' + res.key)
 
             }
         }

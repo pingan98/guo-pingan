@@ -100,9 +100,11 @@ class Chapter extends Component {
     }
   }
   // 点击新增  添加章节
-  handleGoAddLesson = () => {
+  handleGoAddLesson = data => () => {
 
-    this.props.history.push('/edu/chapter/addlesson')
+    {/* 传入data  可以获取到chapterId */ }
+
+    this.props.history.push('/edu/chapter/addlesson', data)
 
 
   }
@@ -131,7 +133,8 @@ class Chapter extends Component {
           return (
             <div>
               <Tooltip title="新增章节">
-                <Button type='primary' onClick={this.handleGoAddLesson}>
+                {/* 传入data  可以获取到chapterId */}
+                <Button type='primary' onClick={this.handleGoAddLesson(data)}>
                   <PlusOutlined />
                 </Button>
               </Tooltip>
