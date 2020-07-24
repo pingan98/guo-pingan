@@ -15,8 +15,16 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 import { connect } from "react-redux";
 import SearchForm from "./SearchForm";
-import { getLessonList } from './redux'
+import {
+  getLessonList,
+  chapterList,
+  batchDelChapter,
+  batchDelLesson,
+} from "./redux";
 import "./index.less";
+
+// 导入全屏的包
+import screenfull from "screenfull";
 
 dayjs.extend(relativeTime);
 
@@ -27,7 +35,7 @@ dayjs.extend(relativeTime);
     //   state.course.permissionValueList,
     //   "Course"
     // )
-    chapterList: state.chapterList
+    chapterList: state.chapterList,
   }),
   { getLessonList }
   // { getcourseList }
@@ -55,7 +63,7 @@ class Chapter extends Component {
     });
   };
 
-  componentDidMount () {
+  componentDidMount() {
     // const { page, limit } = this.state;
     // this.handleTableChange(page, limit);
   }
@@ -93,63 +101,75 @@ class Chapter extends Component {
   };
   // 定义的点击展开按钮的时间处理函数
   handleClickExpand = (expand, record) => {
-    console.log(expand, record)
+    console.log(expand, record);
     if (expand) {
       // 发送请求获取课时数据
-      this.props.getLessonList(record._id)
+      this.props.getLessonList(record._id);
     }
-  }
+  };
   // 点击新增  添加章节
-  handleGoAddLesson = data => () => {
+  handleGoAddLesson = (data) => () => {
+    {
+      /* 传入data  可以获取到chapterId */
+    }
 
-    {/* 传入data  可以获取到chapterId */ }
-
-    this.props.history.push('/edu/chapter/addlesson', data)
-
-  }
+    this.props.history.push("/edu/chapter/addlesson", data);
+  };
   // 批量删除
   handleBatchDel = () => {
     Modal.confirm({
-      title: '确定要批量删出吗？',
-      onOk: () => {
+      title: "确定要批量删出吗？",
+      onOk: async () => {
         // selectedRowKeys  里面存储的是所有选中的课时和章节
         // 所以在批量删除之前，要先分清楚哪些是课时id，哪些是章节id
-        let chapterIds = []  //存储选中章节的id
-        let lessonIds = []   // 存储选中课时的id
+        let chapterIds = []; //存储选中章节的id
+        let lessonIds = []; // 存储选中课时的id
 
         // 拿到所有选中的id
-        let selectedRowKeys = this.state.selectedRowKeys
+        let selectedRowKeys = this.state.selectedRowKeys;
         // 从selectedRowKeys里面找到章节id，其他的就是课时id
         // 所有的章节数据，都存储在redux里面，拿到章节数据，然后遍历章节数据，
         // 判断selectedRowKeys里面哪些是章节id，把这些id取出来，其它就是课时id
 
-        let chapterList = this.props.chapterList.items
+        let chapterList = this.props.chapterList.items;
         // 遍历查找章节id
         // 遍历chapterList，拿到每一个章节id，去selectedRowKeys 里面查找是否存在
-        chapterList.forEach(chapter => {
+        chapterList.forEach((chapter) => {
           // 找到每一条章节id
-          let chapterId = chapter._id
+          let chapterId = chapter._id;
 
           // 拿这条章节id，去selectedRowKeys里面找，看看是否存储，如果存在就取出来
           // 如果selectedRowKeys 里面有chapterId，就返回这个id对应的下标，否则返回-1
 
-          const index = selectedRowKeys.indexOf(chapterId)
+          const index = selectedRowKeys.indexOf(chapterId);
           if (index > -1) {
             // 证明找到了，就从selectedRowKeys把这条数据切出来
             // selectedRowKeys。splice（开始的下标，切几条）
             // splice 会修改原来的数据，并且返回切割的新数组
-            let newArr = selectedRowKeys.splice(index, 1)
-            chapterIds.push(newArr[0])
+            let newArr = selectedRowKeys.splice(index, 1);
+            chapterIds.push(newArr[0]);
           }
-
-        })
+        });
         // 剩余的就是课时id
-        lessonIds = [...selectedRowKeys]
-      }
-    })
+        lessonIds = [...selectedRowKeys];
 
-  }
-  render () {
+        // 需要定义异步接口，定义redux里面的代码
+
+        // 调用异步action  删除章节
+        await this.props.batchDelChapter(chapterIds);
+        // 调用异步action  删除课时
+        await this.props.batchDelLesson(lessonIds);
+        message.success("批量删除成功");
+      },
+    });
+  };
+
+  // 全屏---操作
+  handlescreenFull = () => {
+    // screenfull.request()
+    screenfull.toggle();
+  };
+  render() {
     const { previewVisible, previewImage, selectedRowKeys } = this.state;
 
     const columns = [
@@ -170,12 +190,12 @@ class Chapter extends Component {
         fixed: "right",
         render: (data) => {
           // if ("free" in data) {
-          console.log(data)
+          console.log(data);
           return (
             <div>
               <Tooltip title="新增章节">
                 {/* 传入data  可以获取到chapterId */}
-                <Button type='primary' onClick={this.handleGoAddLesson(data)}>
+                <Button type="primary" onClick={this.handleGoAddLesson(data)}>
                   <PlusOutlined />
                 </Button>
               </Tooltip>
@@ -322,12 +342,18 @@ class Chapter extends Component {
                 <PlusOutlined />
                 <span>新增</span>
               </Button>
-              <Button type="danger" style={{ marginRight: 10 }}
+              <Button
+                type="danger"
+                style={{ marginRight: 10 }}
                 onClick={this.handleBatchDel}
               >
                 <span>批量删除</span>
               </Button>
-              <Tooltip title="全屏" className="course-table-btn">
+              <Tooltip
+                title="全屏"
+                className="course-table-btn"
+                onClick={this.handlescreenFull}
+              >
                 <FullscreenOutlined />
               </Tooltip>
               <Tooltip title="刷新" className="course-table-btn">
@@ -356,7 +382,7 @@ class Chapter extends Component {
             dataSource={this.props.chapterList.items}
             rowKey="_id"
             expandable={{
-              onExpand: this.handleClickExpand
+              onExpand: this.handleClickExpand,
             }}
           />
         </div>
