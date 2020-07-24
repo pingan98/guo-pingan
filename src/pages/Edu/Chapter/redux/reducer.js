@@ -1,4 +1,10 @@
-import { GET_CHAPTER_LIST, GET_LESSON_LIST } from './constant'
+import {
+    GET_CHAPTER_LIST,
+    GET_LESSON_LIST,
+    BATCH_DEL_CHAPTER,
+    BATCH_DEL_LESSON
+} from './constant'
+import Chapter from '..'
 
 const initChapterList = {
     total: 0,
@@ -28,6 +34,47 @@ export default function chapterList (prevState = initChapterList, action) {
             }
             return {
                 ...prevState
+            }
+        case BATCH_DEL_CHAPTER:
+            // 删除指定的章节数据
+            // 1.需要知道删除哪些  action.data   就是要删除的章节ids （数组）
+            const chapterIds = action.data
+            // 2.遍历章节数据，删除在ids中的数据
+            const newChapters = prevState.items.filter(chapter => {
+                // 如果当前的chapter的id在chapterIds中，表示这条数据要删除，就应该返回false
+                if (chapterIds.indexOf(chapter._id) > -1) {
+                    // 要删除的事中，包含这一条数据
+                    return false
+                }
+                return true
+            })
+            return {
+                ...prevState,
+                items: newChapters
+            }
+        case BATCH_DEL_LESSON:
+            // 删除指定的章节课时数据
+            // 所有的课时数据是存储在对应章节的children 属性里面
+            // 1.先获取到所有要删除的课时的ids
+            let lessonIds = action.data
+            // 2.遍历章节，找到章节之后，遍历章节的课时
+            let chapterList = prevState.items
+            // 遍历章节
+            chapterList.forEach(chapter => {
+                // 拿到章节之后，要遍历章节的children
+                // 遍历children 的同时，如果找到要删除的数据，就要把这个数据删除掉
+                const newChildren = chapter.children.filter(lesson => {
+                    if (lessonIds.indexOf(lesson._id) > -1) {
+                        return false
+                    }
+                })
+                // 给chapter 的children 属性重新赋值
+                chapter.children = newChildren
+
+            })
+            return {
+                ...prevState,
+                items: chapterList
             }
         default:
             return prevState

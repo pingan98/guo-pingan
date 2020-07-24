@@ -106,6 +106,47 @@ class Chapter extends Component {
 
     this.props.history.push('/edu/chapter/addlesson', data)
 
+  }
+  // 批量删除
+  handleBatchDel = () => {
+    Modal.confirm({
+      title: '确定要批量删出吗？',
+      onOk: () => {
+        // selectedRowKeys  里面存储的是所有选中的课时和章节
+        // 所以在批量删除之前，要先分清楚哪些是课时id，哪些是章节id
+        let chapterIds = []  //存储选中章节的id
+        let lessonIds = []   // 存储选中课时的id
+
+        // 拿到所有选中的id
+        let selectedRowKeys = this.state.selectedRowKeys
+        // 从selectedRowKeys里面找到章节id，其他的就是课时id
+        // 所有的章节数据，都存储在redux里面，拿到章节数据，然后遍历章节数据，
+        // 判断selectedRowKeys里面哪些是章节id，把这些id取出来，其它就是课时id
+
+        let chapterList = this.props.chapterList.items
+        // 遍历查找章节id
+        // 遍历chapterList，拿到每一个章节id，去selectedRowKeys 里面查找是否存在
+        chapterList.forEach(chapter => {
+          // 找到每一条章节id
+          let chapterId = chapter._id
+
+          // 拿这条章节id，去selectedRowKeys里面找，看看是否存储，如果存在就取出来
+          // 如果selectedRowKeys 里面有chapterId，就返回这个id对应的下标，否则返回-1
+
+          const index = selectedRowKeys.indexOf(chapterId)
+          if (index > -1) {
+            // 证明找到了，就从selectedRowKeys把这条数据切出来
+            // selectedRowKeys。splice（开始的下标，切几条）
+            // splice 会修改原来的数据，并且返回切割的新数组
+            let newArr = selectedRowKeys.splice(index, 1)
+            chapterIds.push(newArr[0])
+          }
+
+        })
+        // 剩余的就是课时id
+        lessonIds = [...selectedRowKeys]
+      }
+    })
 
   }
   render () {
@@ -281,7 +322,9 @@ class Chapter extends Component {
                 <PlusOutlined />
                 <span>新增</span>
               </Button>
-              <Button type="danger" style={{ marginRight: 10 }}>
+              <Button type="danger" style={{ marginRight: 10 }}
+                onClick={this.handleBatchDel}
+              >
                 <span>批量删除</span>
               </Button>
               <Tooltip title="全屏" className="course-table-btn">
